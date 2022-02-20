@@ -1,4 +1,5 @@
 const Sauce = require('../models/Sauce');
+const fs = require('fs');
 
 exports.createSauce = (req, res, next) => {
     const sauceObject = JSON.parse(req.body.sauce);
@@ -22,31 +23,41 @@ exports.getOneSauce = (req, res, next) => {
         .catch(error => res.status(404).json({ error }));
 };
 
-// Doit prendre la modification de la photo
+// Doit prendre la modification de la photo, doit vérifier si l'userId actuel correspon,d à l'userId de la sauce
 exports.modifySauce = (req, res, next) => {
-    Sauce.updateOne({ _id: req.params.id }, {...req.body, _id: req.params.id })
+    const sauceObject = req.file ?
+    {
+        ...JSON.parse(req.body.sauce),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`
+    } : { ...req.body };
+    Sauce.updateOne({ _id: req.params.id }, {...sauceObject, _id: req.params.id })
         .then(() => res.status(200).json({ message: 'Objet modifié !'}))
         .catch(error => res.status(400).json({ error}));
 };
 
 exports.deleteSauce = (req, res, next) => {
-    //Protection de la route delete
     Sauce.findOne({_id: req.params.id})
         .then((sauce) => {
+            //Protection de la route delete
             if(!sauce) {
                 return res.status(404).json({
                     error: new Error('Objet non trouvé !')
                 });
             }
             if(sauce.userId !== req.auth.userId) {
-                return res.status(401).json({
-                    error: new Error('Requête non autorisé !')
+                return res.status(403).json({
+                    error: new Error('unauthorized request')
                 });
             }
-            Sauce.deleteOne({ _id: req.params.id })
-        .then(() => res.status(200).json({ message: 'Objet supprimé !'}))
-        .catch(error => res.status(400).json({ error }));
+            // Suppression des fichiers images du serveur
+            const filename = sauce.imageUrl.split('/images/')[1];
+            fs.unlink(`images/${filename}`, () =>{
+                Sauce.deleteOne({ _id: req.params.id })
+                    .then(() => res.status(200).json({ message: 'Objet supprimé !'}))
+                    .catch(error => res.status(400).json({ error }));
+            });
         })
+        .catch(error => res.status(500).json({ error }));
 };
 
 exports.getAllSauces = (req, res, next) => {
