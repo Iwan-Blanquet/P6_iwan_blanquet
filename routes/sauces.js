@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 
 
-//permet de faire l'authe,tification avant le reste
+//permet de faire l'authentification avant le reste
 const auth = require('../middleware/auth');
 const multer = require('../middleware/multer-config');
 
@@ -16,6 +16,8 @@ router.get('/:id', auth, saucesCtrl.getOneSauce);
 router.put('/:id', auth, multer, saucesCtrl.modifySauce);
 
 router.delete('/:id', auth, saucesCtrl.deleteSauce);
+
+router.post('/:id/like', auth, saucesCtrl.likeSauce);
 
 router.get('/', auth, saucesCtrl.getAllSauces);
 
