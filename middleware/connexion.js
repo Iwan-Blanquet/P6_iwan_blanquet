@@ -1,5 +1,6 @@
 const rateLimit = require('express-rate-limit');
 
+// Limiter le nombre de tentative de connexion
 const maximumAttempts = rateLimit({
     windowMs: 5*60*1000, // délai en miliseconde
     max: 4, // Nombre de tentaives autorisées
